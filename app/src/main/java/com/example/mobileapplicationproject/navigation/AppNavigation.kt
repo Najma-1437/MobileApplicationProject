@@ -8,7 +8,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,17 +23,26 @@ import com.example.mobileapplicationproject.ui.theme.screens.OpportunityListScre
 import com.example.mobileapplicationproject.ui.theme.screens.ProfileScreen
 import com.example.mobileapplicationproject.viewmodel.HomeViewModel
 
-private val Blue = Color(0xFF2563EB)
+private val Blue = Color(0xFF4F6BED)
+private val Lavender = Color(0xFFEDE9FE)
+private val Background = Color(0xFFF8F9FF)
+private val Muted = Color(0xFF69748E)
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+
     val homeViewModel: HomeViewModel = viewModel()
 
-    val currentEntry =
-        navController.currentBackStackEntryAsState().value
+    var studentName by rememberSaveable {
+        mutableStateOf("Alex")
+    }
 
-    val currentRoute = currentEntry?.destination?.route
+    val currentRoute = navController
+        .currentBackStackEntryAsState()
+        .value
+        ?.destination
+        ?.route
 
     val bottomItems = listOf(
         "home" to "Home",
@@ -42,10 +52,11 @@ fun AppNavigation() {
     )
 
     Scaffold(
+        containerColor = Background,
         bottomBar = {
             if (currentRoute != "job/{jobId}") {
                 NavigationBar(
-                    containerColor = Color.White
+                    containerColor = Background
                 ) {
                     bottomItems.forEachIndexed { index, item ->
 
@@ -63,6 +74,7 @@ fun AppNavigation() {
                                     popUpTo("home") {
                                         saveState = true
                                     }
+
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -79,7 +91,9 @@ fun AppNavigation() {
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Blue,
                                 selectedTextColor = Blue,
-                                indicatorColor = Color(0xFFE8F0FF)
+                                indicatorColor = Lavender,
+                                unselectedIconColor = Muted,
+                                unselectedTextColor = Muted
                             )
                         )
                     }
@@ -97,8 +111,18 @@ fun AppNavigation() {
             composable("home") {
                 HomeScreen(
                     viewModel = homeViewModel,
+                    studentName = studentName,
+                    onProfileClick = {
+                        navController.navigate("profile")
+                    },
                     onJobClick = { id ->
                         navController.navigate("job/$id")
+                    },
+                    onSavedClick = {
+                        navController.navigate("saved")
+                    },
+                    onAppliedClick = {
+                        navController.navigate("applied")
                     }
                 )
             }
@@ -126,7 +150,15 @@ fun AppNavigation() {
             }
 
             composable("profile") {
-                ProfileScreen()
+                ProfileScreen(
+                    studentName = studentName,
+                    onStudentNameChange = {
+                        studentName = it
+                    },
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable(
