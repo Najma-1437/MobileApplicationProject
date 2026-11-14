@@ -115,7 +115,7 @@ fun JobDetailScreen(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                "${job.matchScore}%",
+                                job.matchScore?.let { "$it%" } ?: "Not analyzed",
                                 color = Blue,
                                 style = MaterialTheme.typography.displayMedium,
                                 fontWeight = FontWeight.Bold
@@ -132,7 +132,7 @@ fun JobDetailScreen(
 
                     LinearProgressIndicator(
                         progress = {
-                            (job.matchScore / 100f).coerceIn(0f, 1f)
+                            (job.matchScore ?: 0) / 100f.coerceIn(0f, 1f)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

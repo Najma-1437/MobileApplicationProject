@@ -8,8 +8,8 @@ data class Job(
     val location: String,
     val type: String,
     val salary: String,
-    val matchScore: Int,
-    val posted: String,
+    val matchScore: Int? = null,
+    val posted: String = "Date not available",
     val skills: List<String>,
     val isSaved: Boolean = false,
     val isApplied: Boolean = false
