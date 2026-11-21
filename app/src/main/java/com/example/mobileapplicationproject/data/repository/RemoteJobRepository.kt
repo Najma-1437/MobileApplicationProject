@@ -10,19 +10,23 @@ class RemoteJobRepository(
 
     override suspend fun getJobs(): List<Job> {
 
-        val response = apiService.getJobs()
+        val response = apiService.getInternships()
 
-        return response.map { jobDto ->
+        return response.internships.map { internship ->
+
             Job(
-                id = jobDto.id,
-                title = jobDto.title,
-                company = jobDto.company,
-                location = jobDto.location,
-                type = jobDto.type,
-                salary = jobDto.salary,
-                skills = jobDto.skills,
+                id = internship.id,
+                title = internship.title,
+                company = internship.organization,
+                location = internship.location ?: "Not specified",
+                type = "Internship",
+                salary = "Not specified",
                 matchScore = null,
-                posted = "Date not available"
+                posted = "Date not available",
+                skills = (
+                        internship.requiredSkills +
+                                internship.preferredSkills
+                        ).distinct()
             )
         }
     }

@@ -1,4 +1,3 @@
-
 package com.example.mobileapplicationproject.ui.screens
 
 import androidx.compose.foundation.background
@@ -29,7 +28,7 @@ private val Muted = Color(0xFF69748E)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onJobClick: (Int) -> Unit,
+    onJobClick: (String) -> Unit,
     onSavedClick: () -> Unit = {},
     onAppliedClick: () -> Unit = {},
     studentName: String = "Alex",
@@ -60,21 +59,16 @@ fun HomeScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-
         item {
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-
-
                 Text(
-                    text = "$greeting, $firstName ",
+                    text = "$greeting, $firstName",
                     color = Indigo,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
-
-
             }
         }
 

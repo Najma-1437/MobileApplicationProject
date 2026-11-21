@@ -1,8 +1,7 @@
-
 package com.example.mobileapplicationproject.data.model
 
 data class Job(
-    val id: Int,
+    val id: String,
     val title: String,
     val company: String,
     val location: String,

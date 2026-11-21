@@ -17,11 +17,14 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.compose.*
 
+import com.example.mobileapplicationproject.data.remote.RetrofitClient
+import com.example.mobileapplicationproject.data.repository.RemoteJobRepository
 import com.example.mobileapplicationproject.ui.screens.HomeScreen
 import com.example.mobileapplicationproject.ui.theme.screens.JobDetailScreen
 import com.example.mobileapplicationproject.ui.theme.screens.OpportunityListScreen
 import com.example.mobileapplicationproject.ui.theme.screens.ProfileScreen
 import com.example.mobileapplicationproject.viewmodel.HomeViewModel
+import com.example.mobileapplicationproject.viewmodel.HomeViewModelFactory
 
 private val Blue = Color(0xFF4F6BED)
 private val Lavender = Color(0xFFEDE9FE)
@@ -30,9 +33,18 @@ private val Muted = Color(0xFF69748E)
 
 @Composable
 fun AppNavigation() {
+
     val navController = rememberNavController()
 
-    val homeViewModel: HomeViewModel = viewModel()
+    val factory = remember {
+        HomeViewModelFactory(
+            RemoteJobRepository(RetrofitClient.apiService)
+        )
+    }
+
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = factory
+    )
 
     var studentName by rememberSaveable {
         mutableStateOf("Alex")
@@ -55,9 +67,11 @@ fun AppNavigation() {
         containerColor = Background,
         bottomBar = {
             if (currentRoute != "job/{jobId}") {
+
                 NavigationBar(
                     containerColor = Background
                 ) {
+
                     bottomItems.forEachIndexed { index, item ->
 
                         val icon = when (index) {
@@ -74,7 +88,6 @@ fun AppNavigation() {
                                     popUpTo("home") {
                                         saveState = true
                                     }
-
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -109,6 +122,7 @@ fun AppNavigation() {
         ) {
 
             composable("home") {
+
                 HomeScreen(
                     viewModel = homeViewModel,
                     studentName = studentName,
@@ -128,6 +142,7 @@ fun AppNavigation() {
             }
 
             composable("saved") {
+
                 OpportunityListScreen(
                     title = "Saved Opportunities",
                     jobs = homeViewModel.savedJobs,
@@ -139,6 +154,7 @@ fun AppNavigation() {
             }
 
             composable("applied") {
+
                 OpportunityListScreen(
                     title = "My Applications",
                     jobs = homeViewModel.appliedJobs,
@@ -150,6 +166,7 @@ fun AppNavigation() {
             }
 
             composable("profile") {
+
                 ProfileScreen(
                     studentName = studentName,
                     onStudentNameChange = {
@@ -165,12 +182,12 @@ fun AppNavigation() {
                 route = "job/{jobId}",
                 arguments = listOf(
                     navArgument("jobId") {
-                        type = NavType.IntType
+                        type = NavType.StringType
                     }
                 )
             ) { entry ->
 
-                val id = entry.arguments?.getInt("jobId")
+                val id = entry.arguments?.getString("jobId")
 
                 val job = homeViewModel.jobs.find {
                     it.id == id

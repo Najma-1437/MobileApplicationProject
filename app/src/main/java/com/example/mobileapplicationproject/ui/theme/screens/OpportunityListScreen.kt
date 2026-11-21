@@ -14,8 +14,8 @@ import com.example.mobileapplicationproject.components.JobCard
 fun OpportunityListScreen(
     title: String,
     jobs: List<Job>,
-    onJobClick: (Int) -> Unit,
-    onSaveClick: (Int) -> Unit
+    onJobClick: (String) -> Unit,
+    onSaveClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -36,7 +36,10 @@ fun OpportunityListScreen(
                 }
             }
 
-            items(jobs, key = { it.id }) { job ->
+            items(
+                items = jobs,
+                key = { it.id }
+            ) { job ->
                 JobCard(
                     job = job,
                     onBreakdownClick = {

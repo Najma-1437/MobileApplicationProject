@@ -32,7 +32,6 @@ class HomeViewModel(
         loadJobs()
     }
 
-
     fun loadJobs() {
         if (isLoading) return
 
@@ -79,7 +78,7 @@ class HomeViewModel(
         searchQuery = query
     }
 
-    fun toggleSaved(id: Int) {
+    fun toggleSaved(id: String) {
         jobs = jobs.map { job ->
             if (job.id == id) {
                 job.copy(isSaved = !job.isSaved)
