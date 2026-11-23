@@ -4,9 +4,10 @@ package com.example.mobileapplicationproject.data.sample
 import com.example.mobileapplicationproject.data.model.Job
 
 object SampleJobs {
+
     val jobs = listOf(
         Job(
-            id = 1,
+            id = "DEMO-001",
             title = "Junior Android Developer",
             company = "Demo Company A",
             location = "Remote",
@@ -17,7 +18,7 @@ object SampleJobs {
             skills = listOf("Kotlin", "Git", "Firebase")
         ),
         Job(
-            id = 2,
+            id = "DEMO-002",
             title = "Frontend Engineering Intern",
             company = "Demo Company B",
             location = "Nairobi",
@@ -29,7 +30,7 @@ object SampleJobs {
             isSaved = true
         ),
         Job(
-            id = 3,
+            id = "DEMO-003",
             title = "Backend Software Engineer",
             company = "Demo Company C",
             location = "Remote",
@@ -41,7 +42,7 @@ object SampleJobs {
             isApplied = true
         ),
         Job(
-            id = 4,
+            id = "DEMO-004",
             title = "Data Analytics Intern",
             company = "Demo Company D",
             location = "Nairobi",

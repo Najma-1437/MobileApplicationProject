@@ -12,18 +12,35 @@ class RemoteJobRepository(
 
         val response = apiService.getJobs()
 
-        return response.map { jobDto ->
-            Job(
-                id = jobDto.id,
-                title = jobDto.title,
-                company = jobDto.company,
-                location = jobDto.location,
-                type = jobDto.type,
-                salary = jobDto.salary,
-                skills = jobDto.skills,
-                matchScore = null,
-                posted = "Date not available"
+        if (response.status != "success") {
+            throw IllegalStateException(
+                "Backend did not return a successful response."
             )
         }
+
+        return response.internships
+            .filter { it.isActive }
+            .map { dto ->
+
+                Job(
+                    id = dto.id,
+                    title = dto.title,
+                    company = dto.organization,
+                    location = dto.location,
+                    type = dto.workArrangement
+                        .replaceFirstChar {
+                            it.uppercase()
+                        },
+                    salary = "Not specified",
+                    matchScore = null,
+                    posted = "Date not available",
+                    skills = dto.requiredSkills,
+                    description = dto.description,
+                    preferredSkills = dto.preferredSkills,
+                    applicationDeadline =
+                        dto.applicationDeadline,
+                    applicationUrl = dto.applicationUrl
+                )
+            }
     }
 }

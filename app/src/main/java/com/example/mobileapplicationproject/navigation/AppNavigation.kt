@@ -1,6 +1,6 @@
-
 package com.example.mobileapplicationproject.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -22,6 +22,7 @@ import com.example.mobileapplicationproject.ui.theme.screens.JobDetailScreen
 import com.example.mobileapplicationproject.ui.theme.screens.OpportunityListScreen
 import com.example.mobileapplicationproject.ui.theme.screens.ProfileScreen
 import com.example.mobileapplicationproject.viewmodel.HomeViewModel
+import com.example.mobileapplicationproject.viewmodel.ProfileViewModel
 
 private val Blue = Color(0xFF4F6BED)
 private val Lavender = Color(0xFFEDE9FE)
@@ -30,12 +31,21 @@ private val Muted = Color(0xFF69748E)
 
 @Composable
 fun AppNavigation() {
+
     val navController = rememberNavController()
 
     val homeViewModel: HomeViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel()
 
     var studentName by rememberSaveable {
         mutableStateOf("Alex")
+    }
+
+    // Share AI recommendations with the Home screen.
+    val recommendations = profileViewModel.recommendations
+
+    LaunchedEffect(recommendations) {
+        homeViewModel.updateRecommendations(recommendations)
     }
 
     val currentRoute = navController
@@ -43,6 +53,12 @@ fun AppNavigation() {
         .value
         ?.destination
         ?.route
+
+    fun navigateToJob(id: String) {
+        navController.navigate(
+            "job/${Uri.encode(id)}"
+        )
+    }
 
     val bottomItems = listOf(
         "home" to "Home",
@@ -74,7 +90,6 @@ fun AppNavigation() {
                                     popUpTo("home") {
                                         saveState = true
                                     }
-
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -116,7 +131,7 @@ fun AppNavigation() {
                         navController.navigate("profile")
                     },
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSavedClick = {
                         navController.navigate("saved")
@@ -132,7 +147,7 @@ fun AppNavigation() {
                     title = "Saved Opportunities",
                     jobs = homeViewModel.savedJobs,
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSaveClick = homeViewModel::toggleSaved
                 )
@@ -143,7 +158,7 @@ fun AppNavigation() {
                     title = "My Applications",
                     jobs = homeViewModel.appliedJobs,
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSaveClick = homeViewModel::toggleSaved
                 )
@@ -157,7 +172,8 @@ fun AppNavigation() {
                     },
                     onBackClick = {
                         navController.popBackStack()
-                    }
+                    },
+                    profileViewModel = profileViewModel
                 )
             }
 
@@ -165,19 +181,25 @@ fun AppNavigation() {
                 route = "job/{jobId}",
                 arguments = listOf(
                     navArgument("jobId") {
-                        type = NavType.IntType
+                        type = NavType.StringType
                     }
                 )
             ) { entry ->
 
-                val id = entry.arguments?.getInt("jobId")
+                val id = entry.arguments
+                    ?.getString("jobId")
 
                 val job = homeViewModel.jobs.find {
                     it.id == id
                 }
 
+                val recommendation = id?.let {
+                    homeViewModel.getRecommendation(it)
+                }
+
                 JobDetailScreen(
                     job = job,
+                    recommendation = recommendation,
                     onBack = {
                         navController.popBackStack()
                     }

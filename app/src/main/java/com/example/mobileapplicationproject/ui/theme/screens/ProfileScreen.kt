@@ -11,12 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -24,15 +22,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mobileapplicationproject.viewmodel.ProfileViewModel
-import kotlinx.coroutines.launch
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 
 private val Blue = Color(0xFF4F6BED)
 private val Lavender = Color(0xFFEDE9FE)
 private val Background = Color(0xFFF8F9FF)
 private val Indigo = Color(0xFF273469)
 private val Muted = Color(0xFF69748E)
-
-private const val MAX_CV_BYTES = 5L * 1024L * 1024L
 
 @Composable
 fun ProfileScreen(
@@ -42,13 +39,6 @@ fun ProfileScreen(
     profileViewModel: ProfileViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val resolver = context.contentResolver
-
-    val snackbarHostState = remember {
-        SnackbarHostState()
-    }
-
-    val scope = rememberCoroutineScope()
 
     var course by rememberSaveable {
         mutableStateOf("Computer Science")
@@ -59,31 +49,27 @@ fun ProfileScreen(
     }
 
     var interests by rememberSaveable {
-        mutableStateOf(
-            "Software Development, Data Analytics"
-        )
+        mutableStateOf("Software Development, Data Analytics")
     }
 
     var skills by rememberSaveable {
         mutableStateOf("Kotlin, Python, SQL, Git")
     }
 
+    var selectionError by remember {
+        mutableStateOf<String?>(null)
+    }
+
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
 
-        if (uri == null) {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    "CV selection cancelled"
-                )
-            }
-        } else {
+        if (uri != null) {
             try {
-                var filename = "Selected CV"
-                var fileSize: Long? = null
+                var filename = "cv.pdf"
+                var size: Long? = null
 
-                resolver.query(
+                context.contentResolver.query(
                     uri,
                     arrayOf(
                         OpenableColumns.DISPLAY_NAME,
@@ -97,7 +83,6 @@ fun ProfileScreen(
                         val nameIndex = cursor.getColumnIndex(
                             OpenableColumns.DISPLAY_NAME
                         )
-
                         val sizeIndex = cursor.getColumnIndex(
                             OpenableColumns.SIZE
                         )
@@ -107,163 +92,258 @@ fun ProfileScreen(
                                 ?: filename
                         }
 
-                        if (
-                            sizeIndex >= 0 &&
+                        if (sizeIndex >= 0 &&
                             !cursor.isNull(sizeIndex)
                         ) {
-                            fileSize = cursor.getLong(sizeIndex)
+                            size = cursor.getLong(sizeIndex)
                         }
                     }
                 }
-
-                val validExtension = listOf(
-                    ".pdf",
-                    ".doc",
-                    ".docx"
-                ).any { extension ->
-                    filename.endsWith(
-                        extension,
-                        ignoreCase = true
-                    )
-                }
-
-                val mimeType = resolver.getType(uri)
-
-                val validMime = mimeType == null ||
-                        mimeType == "application/octet-stream" ||
-                        mimeType in setOf(
-                    "application/pdf",
-                    "application/msword",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
 
                 when {
-                    !validExtension || !validMime -> {
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                "Choose a PDF, DOC or DOCX file"
-                            )
-                        }
+                    !filename.endsWith(
+                        ".pdf",
+                        ignoreCase = true
+                    ) -> {
+                        selectionError =
+                            "Please choose a PDF file."
                     }
 
-                    fileSize != null &&
-                            fileSize!! > MAX_CV_BYTES -> {
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                "CV must be 5 MB or smaller"
-                            )
-                        }
+                    size != null &&
+                            size!! > 5L * 1024L * 1024L -> {
+                        selectionError =
+                            "CV must be 5 MB or smaller."
                     }
 
                     else -> {
+                        selectionError = null
                         profileViewModel.selectCv(
                             uri = uri,
                             name = filename,
-                            size = fileSize
+                            size = size
                         )
                     }
                 }
             } catch (exception: Exception) {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        "Could not read the selected file"
-                    )
-                }
+                selectionError =
+                    "Could not read the selected file."
             }
         }
     }
 
-    Scaffold(
-        containerColor = Background,
-        snackbarHost = {
-            SnackbarHost(snackbarHostState)
-        }
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Background)
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+        Text(
+            text = "My Profile",
+            color = Indigo,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Text(
+            text = "Build your profile and discover your strengths.",
+            color = Muted
+        )
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Lavender
+            ),
+            shape = RoundedCornerShape(22.dp)
         ) {
-
-            // PROFILE HEADER
             Column(
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "My Profile",
-                    style = MaterialTheme.typography.headlineMedium,
+                    text = "STUDENT INFORMATION",
+                    color = Blue,
                     fontWeight = FontWeight.Bold,
-                    color = Indigo
+                    style = MaterialTheme.typography.labelMedium
+                )
+
+                ProfileInput(
+                    "Full name",
+                    studentName,
+                    onStudentNameChange
+                )
+
+                ProfileInput(
+                    "Course",
+                    course
+                ) { course = it }
+
+                ProfileInput(
+                    "University",
+                    university
+                ) { university = it }
+            }
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Career interests & skills",
+                    color = Indigo,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                ProfileInput(
+                    "Career interests",
+                    interests
+                ) { interests = it }
+
+                ProfileInput(
+                    "Skills",
+                    skills
+                ) { skills = it }
+            }
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "CV Analysis",
+                    color = Indigo,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
                 )
 
                 Text(
-                    text = "Make your next career move personal.",
+                    text = "Upload your CV to extract education, " +
+                            "skills, experience and projects.",
                     color = Muted
                 )
-            }
 
-            // STUDENT INFORMATION
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Lavender
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Surface(
+                    color = Lavender,
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "YOUR STUDENT PROFILE",
-                        color = Blue,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.UploadFile,
+                            contentDescription = null,
+                            tint = Blue,
+                            modifier = Modifier.size(36.dp)
+                        )
 
+                        Text(
+                            text = "PDF only · Maximum 5 MB",
+                            color = Indigo
+                        )
+
+                        Button(
+                            onClick = {
+                                picker.launch(
+                                    arrayOf("application/pdf")
+                                )
+                            },
+                            enabled = !profileViewModel.isUploading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Blue
+                            )
+                        ) {
+                            Text("Choose CV")
+                        }
+                    }
+                }
+
+                selectionError?.let {
                     Text(
-                        text = studentName.ifBlank { "Student" },
+                        text = it,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                if (profileViewModel.selectedCvUri != null) {
+                    Text(
+                        text = profileViewModel.selectedCvName
+                            ?: "Selected CV",
                         color = Indigo,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.headlineSmall
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Row(
+                        horizontalArrangement =
+                            Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                profileViewModel.uploadCv()
+                            },
+                            enabled = !profileViewModel.isUploading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Blue
+                            )
+                        ) {
+                            Text("Analyze CV")
+                        }
+
+                        OutlinedButton(
+                            onClick = profileViewModel::removeCv,
+                            enabled = !profileViewModel.isUploading
+                        ) {
+                            Text("Remove")
+                        }
+                    }
+                }
+
+                if (profileViewModel.isUploading) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Blue
                     )
 
                     Text(
-                        text = "$course · $university",
-                        color = Muted,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Analyzing your CV...",
+                        color = Muted
                     )
+                }
 
-                    HorizontalDivider(
-                        color = Color(0xFFD8D0F4)
-                    )
-
-                    ProfileField(
-                        label = "Full name",
-                        value = studentName,
-                        onValueChange = onStudentNameChange
-                    )
-
-                    ProfileField(
-                        label = "Course",
-                        value = course,
-                        onValueChange = { course = it }
-                    )
-
-                    ProfileField(
-                        label = "University",
-                        value = university,
-                        onValueChange = { university = it }
+                profileViewModel.uploadMessage?.let {
+                    Text(
+                        text = it,
+                        color = if (
+                            profileViewModel.uploadSucceeded
+                        ) Blue else MaterialTheme.colorScheme.error
                     )
                 }
             }
+        }
 
-            // SKILLS AND INTERESTS
+        profileViewModel.candidateProfile?.let { profile ->
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
@@ -272,191 +352,35 @@ fun ProfileScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement =
+                        Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "Career interests & skills",
-                        fontWeight = FontWeight.Bold,
+                        text = "Extracted Candidate Profile",
                         color = Indigo,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Text(
-                        text = "Update your interests and skills " +
-                                "to prepare for future job matching.",
-                        color = Muted,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    ProfileField(
-                        label = "Career interests (comma-separated)",
-                        value = interests,
-                        onValueChange = { interests = it }
-                    )
-
-                    ProfileField(
-                        label = "Skills (comma-separated)",
-                        value = skills,
-                        onValueChange = { skills = it }
-                    )
-                }
-            }
-
-            // CV MANAGEMENT
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "My CV",
                         fontWeight = FontWeight.Bold,
-                        color = Indigo,
                         style = MaterialTheme.typography.titleLarge
                     )
 
                     Text(
-                        text = "Choose your CV to prepare it " +
-                                "for upload and future AI analysis.",
-                        color = Muted
-                    )
-
-                    Surface(
-                        color = Lavender,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment =
-                                Alignment.CenterHorizontally,
-                            verticalArrangement =
-                                Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.UploadFile,
-                                contentDescription = null,
-                                tint = Blue,
-                                modifier = Modifier.size(36.dp)
-                            )
-
-                            Text(
-                                text = "PDF, DOC or DOCX · Up to 5 MB",
-                                color = Indigo,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-
-                            Button(
-                                onClick = {
-                                    picker.launch(
-                                        arrayOf(
-                                            "application/pdf",
-                                            "application/msword",
-                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                        )
-                                    )
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Blue
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Choose CV")
-                            }
-                        }
-                    }
-
-                    if (profileViewModel.selectedCvUri != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Description,
-                                contentDescription = null,
-                                tint = Blue
-                            )
-
-                            Spacer(Modifier.width(10.dp))
-
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = profileViewModel.selectedCvName
-                                        ?: "Selected CV",
-                                    color = Indigo,
-                                    fontWeight = FontWeight.Medium
-                                )
-
-                                profileViewModel.selectedCvSize?.let { size ->
-                                    Text(
-                                        text = "${size / 1024} KB",
-                                        color = Muted,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
-
-                            TextButton(
-                                onClick = profileViewModel::removeCv,
-                                enabled = !profileViewModel.isUploading
-                            ) {
-                                Text("Remove", color = Blue)
-                            }
-                        }
-
-                        Button(
-                            onClick = {
-                                // Temporary student ID until
-                                // authentication is implemented.
-                                profileViewModel.uploadCv(
-                                    studentId = 1
-                                )
-                            },
-                            enabled = !profileViewModel.isUploading,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Blue
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (profileViewModel.isUploading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.White
-                                )
-                            } else {
-                                Text("Upload CV")
-                            }
-                        }
-                    }
-
-                    profileViewModel.uploadMessage?.let { message ->
-                        Text(
-                            text = message,
-                            color = if (
-                                profileViewModel.uploadSucceeded
-                            ) {
-                                Blue
-                            } else {
-                                Color(0xFF9B5A30)
-                            }
-                        )
-                    }
-
-                    Text(
-                        text = "Backend integration pending. " +
-                                "Selecting a file does not upload it " +
-                                "or perform AI analysis.",
+                        text = "These details were extracted " +
+                                "from your CV by the backend.",
                         color = Muted,
                         style = MaterialTheme.typography.bodySmall
                     )
+
+                    listOf(
+                        "Education" to "education",
+                        "Experience" to "experience",
+                        "Skills" to "skills",
+                        "Projects" to "projects",
+                        "Career interests" to "career_interests"
+                    ).forEach { (label, key) ->
+                        ProfileResultSection(
+                            title = label,
+                            value = profile.get(key)
+                        )
+                    }
                 }
             }
         }
@@ -464,7 +388,7 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileField(
+private fun ProfileInput(
     label: String,
     value: String,
     onValueChange: (String) -> Unit
@@ -472,17 +396,93 @@ private fun ProfileField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = {
-            Text(label)
-        },
+        label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Blue,
-            unfocusedBorderColor = Color(0xFFD6DDF1),
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.White
         )
     )
+}
+
+@Composable
+private fun ProfileResultSection(
+    title: String,
+    value: JsonElement?
+) {
+    if (value == null || value.isJsonNull) return
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            color = Indigo
+        )
+
+        val displayText = when {
+            value.isJsonArray -> {
+                val array = value.asJsonArray
+
+                if (array.size() == 0) {
+                    "No information extracted"
+                } else {
+                    array.joinToString("\n\n") { element ->
+                        formatProfileElement(element)
+                    }
+                }
+            }
+
+            else -> formatProfileElement(value)
+        }
+
+        Text(
+            text = displayText,
+            color = Muted,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
+
+private fun formatProfileElement(
+    element: JsonElement
+): String {
+    if (!element.isJsonObject) {
+        return element.toString().trim('"')
+    }
+
+    val obj: JsonObject = element.asJsonObject
+
+    return obj.entrySet()
+        .filter { (key, value) ->
+            key != "evidence" &&
+                    !value.isJsonNull
+        }
+        .joinToString("\n") { (key, value) ->
+            val readableKey = key
+                .replace("_", " ")
+                .replaceFirstChar { it.uppercase() }
+
+            val readableValue = when {
+                value.isJsonPrimitive ->
+                    value.asString
+
+                value.isJsonArray ->
+                    value.asJsonArray.joinToString(", ") {
+                        if (it.isJsonPrimitive) {
+                            it.asString
+                        } else {
+                            it.toString()
+                        }
+                    }
+
+                else -> value.toString()
+            }
+
+            "$readableKey: $readableValue"
+        }
 }
