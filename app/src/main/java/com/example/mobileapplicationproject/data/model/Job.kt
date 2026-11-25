@@ -1,4 +1,3 @@
-
 package com.example.mobileapplicationproject.data.model
 
 data class Job(

@@ -7,7 +7,7 @@ object SampleJobs {
 
     val jobs = listOf(
         Job(
-            id = "DEMO-001",
+            id = "1",
             title = "Junior Android Developer",
             company = "Demo Company A",
             location = "Remote",
@@ -18,7 +18,7 @@ object SampleJobs {
             skills = listOf("Kotlin", "Git", "Firebase")
         ),
         Job(
-            id = "DEMO-002",
+            id = "2",
             title = "Frontend Engineering Intern",
             company = "Demo Company B",
             location = "Nairobi",
@@ -30,7 +30,7 @@ object SampleJobs {
             isSaved = true
         ),
         Job(
-            id = "DEMO-003",
+            id = "3",
             title = "Backend Software Engineer",
             company = "Demo Company C",
             location = "Remote",
@@ -42,7 +42,7 @@ object SampleJobs {
             isApplied = true
         ),
         Job(
-            id = "DEMO-004",
+            id = "4",
             title = "Data Analytics Intern",
             company = "Demo Company D",
             location = "Nairobi",

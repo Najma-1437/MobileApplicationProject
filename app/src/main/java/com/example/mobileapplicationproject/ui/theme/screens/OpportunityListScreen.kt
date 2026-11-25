@@ -56,7 +56,7 @@ fun OpportunityListScreen(
                     modifier = Modifier.padding(vertical = 24.dp)
                 )
             }
-        } else {
+
             items(
                 items = jobs,
                 key = { it.id }

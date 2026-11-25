@@ -10,11 +10,23 @@ class RemoteJobRepository(
 
     override suspend fun getJobs(): List<Job> {
 
-        val response = apiService.getJobs()
+        val response = apiService.getInternships()
 
-        if (response.status != "success") {
-            throw IllegalStateException(
-                "Backend did not return a successful response."
+        return response.internships.map { internship ->
+
+            Job(
+                id = internship.id,
+                title = internship.title,
+                company = internship.organization,
+                location = internship.location ?: "Not specified",
+                type = "Internship",
+                salary = "Not specified",
+                matchScore = null,
+                posted = "Date not available",
+                skills = (
+                        internship.requiredSkills +
+                                internship.preferredSkills
+                        ).distinct()
             )
         }
 

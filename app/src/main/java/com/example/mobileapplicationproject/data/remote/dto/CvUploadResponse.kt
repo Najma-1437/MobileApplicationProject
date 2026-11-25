@@ -7,5 +7,5 @@ data class CvUploadResponse(
     val status: String,
     val message: String,
     val filename: String,
-    val profile: JsonObject
+    val profile: Map<String, Any>
 )

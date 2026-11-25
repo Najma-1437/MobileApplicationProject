@@ -1,4 +1,3 @@
-
 package com.example.mobileapplicationproject.ui.screens
 
 import androidx.compose.foundation.background
@@ -62,22 +61,10 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "YOUR CAREER COMPANION",
-                    color = Blue,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = "$greeting, $firstName 👋",
+                    text = "$greeting, $firstName",
                     color = Indigo,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = "Find your next step, at your own pace.",
-                    color = Muted
                 )
             }
         }
