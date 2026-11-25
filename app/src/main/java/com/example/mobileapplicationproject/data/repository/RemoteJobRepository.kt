@@ -29,5 +29,30 @@ class RemoteJobRepository(
                         ).distinct()
             )
         }
+
+        return response.internships
+            .filter { it.isActive }
+            .map { dto ->
+
+                Job(
+                    id = dto.id,
+                    title = dto.title,
+                    company = dto.organization,
+                    location = dto.location,
+                    type = dto.workArrangement
+                        .replaceFirstChar {
+                            it.uppercase()
+                        },
+                    salary = "Not specified",
+                    matchScore = null,
+                    posted = "Date not available",
+                    skills = dto.requiredSkills,
+                    description = dto.description,
+                    preferredSkills = dto.preferredSkills,
+                    applicationDeadline =
+                        dto.applicationDeadline,
+                    applicationUrl = dto.applicationUrl
+                )
+            }
     }
 }

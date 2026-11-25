@@ -10,6 +10,10 @@ data class Job(
     val matchScore: Int? = null,
     val posted: String = "Date not available",
     val skills: List<String>,
+    val description: String = "",
+    val preferredSkills: List<String> = emptyList(),
+    val applicationDeadline: String? = null,
+    val applicationUrl: String? = null,
     val isSaved: Boolean = false,
     val isApplied: Boolean = false
 )

@@ -1,6 +1,6 @@
-
 package com.example.mobileapplicationproject.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -50,11 +50,24 @@ fun AppNavigation() {
         mutableStateOf("Alex")
     }
 
+    // Share AI recommendations with the Home screen.
+    val recommendations = profileViewModel.recommendations
+
+    LaunchedEffect(recommendations) {
+        homeViewModel.updateRecommendations(recommendations)
+    }
+
     val currentRoute = navController
         .currentBackStackEntryAsState()
         .value
         ?.destination
         ?.route
+
+    fun navigateToJob(id: String) {
+        navController.navigate(
+            "job/${Uri.encode(id)}"
+        )
+    }
 
     val bottomItems = listOf(
         "home" to "Home",
@@ -130,7 +143,7 @@ fun AppNavigation() {
                         navController.navigate("profile")
                     },
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSavedClick = {
                         navController.navigate("saved")
@@ -147,7 +160,7 @@ fun AppNavigation() {
                     title = "Saved Opportunities",
                     jobs = homeViewModel.savedJobs,
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSaveClick = homeViewModel::toggleSaved
                 )
@@ -159,7 +172,7 @@ fun AppNavigation() {
                     title = "My Applications",
                     jobs = homeViewModel.appliedJobs,
                     onJobClick = { id ->
-                        navController.navigate("job/$id")
+                        navigateToJob(id)
                     },
                     onSaveClick = homeViewModel::toggleSaved
                 )
@@ -174,7 +187,8 @@ fun AppNavigation() {
                     },
                     onBackClick = {
                         navController.popBackStack()
-                    }
+                    },
+                    profileViewModel = profileViewModel
                 )
             }
 
@@ -193,8 +207,13 @@ fun AppNavigation() {
                     it.id == id
                 }
 
+                val recommendation = id?.let {
+                    homeViewModel.getRecommendation(it)
+                }
+
                 JobDetailScreen(
                     job = job,
+                    recommendation = recommendation,
                     onBack = {
                         navController.popBackStack()
                     }

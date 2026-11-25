@@ -14,9 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.mobileapplicationproject.components.JobCard
-import com.example.mobileapplicationproject.components.OpportunityLoadingState
-import com.example.mobileapplicationproject.components.OpportunityErrorState
-import com.example.mobileapplicationproject.components.OpportunityEmptyState
 import com.example.mobileapplicationproject.viewmodel.HomeViewModel
 import java.util.Calendar
 
@@ -92,9 +89,7 @@ fun HomeScreen(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
                     focusedBorderColor = Blue,
-                    unfocusedBorderColor = Color(0xFFDCE2F4),
-                    focusedLeadingIconColor = Blue,
-                    unfocusedLeadingIconColor = Muted
+                    unfocusedBorderColor = Color(0xFFDCE2F4)
                 )
             )
         }
@@ -111,8 +106,7 @@ fun HomeScreen(
                 )
 
                 Text(
-                    text = "Explore available roles and save " +
-                            "the ones you like.",
+                    text = "Explore available roles and save the ones you like.",
                     color = Muted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -122,30 +116,68 @@ fun HomeScreen(
         when {
             viewModel.isLoading -> {
                 item {
-                    OpportunityLoadingState()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            color = Blue
+                        )
+                    }
                 }
             }
 
             viewModel.errorMessage != null -> {
                 item {
-                    OpportunityErrorState(
-                        message = viewModel.errorMessage
-                            ?: "Unable to load opportunities.",
-                        onRetry = viewModel::retry
-                    )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalArrangement =
+                                Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Could not load opportunities",
+                                fontWeight = FontWeight.Bold,
+                                color = Indigo
+                            )
+
+                            Text(
+                                text = viewModel.errorMessage
+                                    ?: "An unexpected error occurred.",
+                                color = Muted
+                            )
+
+                            Button(
+                                onClick = viewModel::retry,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Blue
+                                )
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                    }
                 }
             }
 
             filteredJobs.isEmpty() -> {
                 item {
-                    OpportunityEmptyState(
-                        message = if (
-                            viewModel.searchQuery.isBlank()
-                        ) {
+                    Text(
+                        text = if (viewModel.searchQuery.isBlank()) {
                             "No opportunities available yet."
                         } else {
                             "No opportunities match your search."
-                        }
+                        },
+                        color = Muted,
+                        modifier = Modifier.padding(vertical = 24.dp)
                     )
                 }
             }

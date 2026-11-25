@@ -4,6 +4,7 @@ package com.example.mobileapplicationproject.data.sample
 import com.example.mobileapplicationproject.data.model.Job
 
 object SampleJobs {
+
     val jobs = listOf(
         Job(
             id = "1",
